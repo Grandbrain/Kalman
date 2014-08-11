@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kalman.Test", "Kalman.Test\Kalman.Test.vcxproj", "{0F439C4C-447E-4093-A790-D8F92912B5FB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kalman.Engine", "Kalman.Engine\Kalman.Engine.vcxproj", "{CB118D83-B530-48AA-95EF-B0BFC325D075}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -15,10 +13,6 @@ Global
 		{0F439C4C-447E-4093-A790-D8F92912B5FB}.Debug|Win32.Build.0 = Debug|Win32
 		{0F439C4C-447E-4093-A790-D8F92912B5FB}.Release|Win32.ActiveCfg = Release|Win32
 		{0F439C4C-447E-4093-A790-D8F92912B5FB}.Release|Win32.Build.0 = Release|Win32
-		{CB118D83-B530-48AA-95EF-B0BFC325D075}.Debug|Win32.ActiveCfg = Debug|Win32
-		{CB118D83-B530-48AA-95EF-B0BFC325D075}.Debug|Win32.Build.0 = Debug|Win32
-		{CB118D83-B530-48AA-95EF-B0BFC325D075}.Release|Win32.ActiveCfg = Release|Win32
-		{CB118D83-B530-48AA-95EF-B0BFC325D075}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
