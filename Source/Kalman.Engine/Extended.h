@@ -13,8 +13,6 @@ namespace Kalman
 
         EKFilter();
         EKFilter(unsigned, unsigned, unsigned, unsigned, unsigned);
-
-
         virtual ~EKFilter();
 
         unsigned getSizeX() const;
@@ -81,7 +79,6 @@ namespace Kalman
         unsigned nv;
 
     private:
-
 
         static void factor(Matrix&);
         static void upperInvert(Matrix&);
