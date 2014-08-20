@@ -6,14 +6,33 @@
 
 namespace Kalman
 {
+    enum State
+    {
+        ModifiedN = 1,
+        ModifiedNU = (1<<1),
+        ModifiedNW = (1<<2),
+        ModifiedM = (1<<3),
+        ModifiedNV = (1<<4),
+        ModifiedP = (1<<5),
+        Lowmask = ((1<<8) - 1),
+        ModifiedA = (1<<8),
+        ModifiedW = (1<<9),
+        ModifiedQ = (1<<10),
+        Midmask = ( ((1<<4) - 1) << 8 ),
+        ModifiedH = (1<<12),
+        ModifiedV = (1<<13),
+        ModifiedR = (1<<14),
+        Highmask = ( ((1<<4) - 1) << 12 )
+    };
+
     template<typename T>
-    class EFilter
+    class Extended
     {
     public:
 
-        EKFilter();
-        EKFilter(unsigned, unsigned, unsigned, unsigned, unsigned);
-        virtual ~EKFilter();
+        explicit Extended();
+        explicit Extended(unsigned, unsigned, unsigned, unsigned, unsigned);
+        virtual ~Extended();
 
         unsigned getSizeX() const;
         unsigned getSizeU() const;
@@ -21,13 +40,12 @@ namespace Kalman
         unsigned getSizeZ() const;
         unsigned getSizeV() const;
 
-
-        void setDim(unsigned, unsigned, unsigned, unsigned, unsigned);
         void setSizeX(unsigned);
         void setSizeU(unsigned);
         void setSizeW(unsigned);
         void setSizeZ(unsigned);
         void setSizeV(unsigned);
+        
         void init(Vector&, Matrix&);
         void step(Vector&, const Vector&);
         void timeUpdateStep(Vector&);
@@ -80,6 +98,7 @@ namespace Kalman
 
     private:
 
+
         static void factor(Matrix&);
         static void upperInvert(Matrix&);
         void timeUpdate();
@@ -121,26 +140,13 @@ namespace Kalman
 
 
     template<typename T>
-    EFilter<T>::EFilter() : flags(0)
+    Extended<T>::Extended() : flags(0)
     {
     }
 
 
     template<typename T>
-    EFilter<T>::EFilter(unsigned n_, unsigned nu_, unsigned nw_, unsigned m_, unsigned nv_) : flags(0)
-    {
-        setDim(n_, nu_, nw_, m_, nv_);
-    }
-
-
-    template<typename T>
-    EFilter<T>::~EFilter()
-    {
-    }
-
-
-    template<typename T>
-    void EFilter<T>::setDim(unsigned n_, unsigned nu_, unsigned nw_, unsigned m_, unsigned nv_)
+    Extended<T>::Extended(unsigned n_, unsigned nu_, unsigned nw_, unsigned m_, unsigned nv_) : flags(0)
     {
         setSizeX(n_);
         setSizeU(nu_);
@@ -151,94 +157,102 @@ namespace Kalman
 
 
     template<typename T>
-    unsigned EFilter<T>::getSizeX() const
+    Extended<T>::~Extended()
+    {
+    }
+
+
+    template<typename T>
+    unsigned Extended<T>::getSizeX() const
     {
         return n;
     }
 
 
     template<typename T>
-    unsigned EFilter<T>::getSizeU() const
+    unsigned Extended<T>::getSizeU() const
     {
         return nu;
     }
 
 
     template<typename T>
-    unsigned EFilter<T>::getSizeW() const
+    unsigned Extended<T>::getSizeW() const
     {
         return nw;
     }
 
 
     template<typename T>
-    unsigned EFilter<T>::getSizeZ() const
+    unsigned Extended<T>::getSizeZ() const
     {
         return m;
     }
 
 
     template<typename T>
-    unsigned EFilter<T>::getSizeV() const
+    unsigned Extended<T>::getSizeV() const
     {
         return nv;
     }
 
 
     template<typename T>
-    void EFilter<T>::setSizeX(unsigned n_)
+    void Extended<T>::setSizeX(unsigned n_)
     {
         if (n_ == n) return;
-        flags |= KALMAN_N_MODIFIED;
+        flags |= ModifiedN;
         n = n_;
     }
 
+    
     template<typename T>
-    void EFilter<T>::setSizeU(unsigned nu_)
+    void Extended<T>::setSizeU(unsigned nu_)
     {
         if (nu_ == nu) return;
-        flags |= KALMAN_NU_MODIFIED;
+        flags |= ModifiedNU;
         nu = nu_;
     }
 
+    
     template<typename T>
-    void EFilter<T>::setSizeW(unsigned nw_)
+    void Extended<T>::setSizeW(unsigned nw_)
     {
         if (nw_ == nw) return;
-        flags |= KALMAN_NW_MODIFIED;
+        flags |= ModifiedNW;
         nw = nw_;
     }
 
 
     template<typename T>
-    void EFilter<T>::setSizeZ(unsigned m_)
+    void Extended<T>::setSizeZ(unsigned m_)
     {
         if (m_ == m) return;
-        flags |= KALMAN_M_MODIFIED;
+        flags |= ModifiedM;
         m = m_;
     }
 
 
     template<typename T>
-    void EFilter<T>::setSizeV(unsigned nv_)
+    void Extended<T>::setSizeV(unsigned nv_)
     {
         if (nv_ == nv)
-        flags |= KALMAN_NV_MODIFIED;
+        flags |= ModifiedNV;
         nv = nv_;
     }
 
 
     template<typename T>
-    void EFilter<T>::init(Vector& x_, Matrix& P_)
+    void Extended<T>::init(Vector& x_, Matrix& P_)
     {
         x.swap(x_);
         _P.swap(P_);
-        flags |= KALMAN_P_MODIFIED;
+        flags |= ModifiedP;
     }
 
 
     template<typename T>
-    void EFilter<T>::step(Vector& u_, const Vector& z_)
+    void Extended<T>::step(Vector& u_, const Vector& z_)
     {
         timeUpdateStep(u_);
         measureUpdateStep(z_);
@@ -246,10 +260,9 @@ namespace Kalman
 
 
     template<typename T>
-    void EFilter<T>::timeUpdateStep(Vector& u_)
+    void Extended<T>::timeUpdateStep(Vector& u_)
     {
-
-        K_UINT_32 i, j, k;
+        unsigned i, j, k;
 
         sizeUpdate();
         u.swap(u_);
@@ -260,50 +273,43 @@ namespace Kalman
         makeQImpl();
         makeProcess();
 
-        if (!OQ)
+        if (flags & ModifiedQ)
         {
-            if (flags & KALMAN_Q_MODIFIED)
+            Q_ = Q;
+            factor(Q_);
+            upperInvert(Q_);
+        }
+        
+        Q.swap(Q_);
+        
+        if (flags & ( ModifiedW | ModifiedQ ) )
+        {
+            for (i = 0; i < n; ++i)
             {
-                Q_ = Q;
-                factor(Q_);
-                upperInvert(Q_);
-            }
-
-            Q.swap(Q_);
-
-            if (flags & ( KALMAN_W_MODIFIED | KALMAN_Q_MODIFIED ) )
-            {
-                for (i = 0; i < n; ++i)
+                for (j = 0; j < nw; ++j)
                 {
-                    for (j = 0; j < nw; ++j)
-                    {
-                        W_(i,j) = W(i,j);
-                        for (k = 0; k < j; ++k)
-                            W_(i,j) += W(i,k)*Q(j,k);
-                    }
+                    W_(i,j) = W(i,j);
+                    for (k = 0; k < j; ++k)
+                        W_(i,j) += W(i,k)*Q(j,k);
                 }
             }
-
-            W.swap(W_);
         }
-
+        
+        W.swap(W_);
         timeUpdate();
 
-        if (!OQ)
-        {
-            Q.swap(Q_);
-            W.swap(W_);
-        }
+        Q.swap(Q_);
+        W.swap(W_);
 
         u.swap(u_);
-        flags &= ~KALMAN_MIDMASK;
+        flags &= ~Midmask;
     }
 
 
     template<typename T>
-    void EFilter<T>::measureUpdateStep(const Vector& z_)
+    void Extended<T>::measureUpdateStep(const Vector& z_)
     {
-        K_UINT_32 i, j, k;
+        unsigned i, j, k;
         sizeUpdate();
 
         if (m == 0) return;
@@ -320,16 +326,6 @@ namespace Kalman
 
         makeDZ();
 
-        if (OVR)
-        {
-            if (flags & ( KALMAN_V_MODIFIED | KALMAN_R_MODIFIED ) )
-            {
-                for (i = 0; i < m; ++i)
-                    R_(i,i) = V(i,i)*V(i,i)*R(i,i);
-            }
-        }
-        else
-        {
             if (flags & ( KALMAN_V_MODIFIED | KALMAN_R_MODIFIED ) )
             {
                 _x.resize(nv);
@@ -378,7 +374,6 @@ namespace Kalman
             }
 
             dz.swap(_x);
-        }
 
         _x.resize(n);
         _x = T(0.0);
@@ -400,7 +395,7 @@ namespace Kalman
 
 
     template<typename T>
-    const typename EFilter<T>::Vector& EFilter<T>::predict(Vector& u_)
+    const typename Extended<T>::Vector& Extended<T>::predict(Vector& u_)
     {
         sizeUpdate();
         u.swap(u_);
@@ -416,7 +411,7 @@ namespace Kalman
 
 
     template<typename T>
-    const typename EFilter<T>::Vector& EFilter<T>::simulate()
+    const typename Extended<T>::Vector& Extended<T>::simulate()
     {
         sizeUpdate();
         _x = z;
@@ -430,16 +425,16 @@ namespace Kalman
 
 
     template<typename T>
-    const typename EFilter<>::Vector& EFilter<T>::getX() const
+    const typename Extended<>::Vector& Extended<T>::getX() const
     {
         return x;
     }
 
 
     template<typename T>
-    const typename EFilter<T>::Matrix& EFilter<T>::calculateP() const
+    const typename Extended<T>::Matrix& Extended<T>::calculateP() const
     {
-        if (!(flags & KALMAN_P_MODIFIED))
+        if (!(flags & ModifiedP))
         {
             _P.resize(n, n);
             for (unsigned i = 0; i < n; ++i)
@@ -461,193 +456,193 @@ namespace Kalman
 
 
     template<typename T>
-    void EFilter<T>::makeBaseA()
+    void Extended<T>::makeBaseA()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseW()
+    void Extended<T>::makeBaseW()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseQ()
+    void Extended<T>::makeBaseQ()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseH()
+    void Extended<T>::makeBaseH()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseV()
+    void Extended<T>::makeBaseV()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseR()
+    void Extended<T>::makeBaseR()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeCommonProcess()
+    void Extended<T>::makeCommonProcess()
     {
     }
 
 
     template<typename T>
-    void EFilter<T>::makeCommonMeasure()
+    void Extended<T>::makeCommonMeasure()
     {
     }
 
 
     template<typename T>
-    void EFilter<T>::makeA()
-    {
-        modified_ = false;
-    }
-
-
-    template<typename T>
-    void EFilter<T>::makeW()
+    void Extended<T>::makeA()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeQ()
+    void Extended<T>::makeW()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeH()
+    void Extended<T>::makeQ()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeV()
+    void Extended<T>::makeH()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeR()
+    void Extended<T>::makeV()
     {
         modified_ = false;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeDZ()
+    void Extended<T>::makeR()
+    {
+        modified_ = false;
+    }
+
+
+    template<typename T>
+    void Extended<T>::makeDZ()
     {
     }
 
 
     template<typename T>
-    void EFilter<T>::sizeUpdate()
+    void Extended<T>::sizeUpdate()
     {
         if (!flags) return;
-        if (flags & KALMAN_N_MODIFIED)
+        if (flags & ModifiedN)
         {
             A.resize(n, n);
             makeBaseAImpl();
         }
 
-        if (flags & (KALMAN_N_MODIFIED | KALMAN_NW_MODIFIED) )
+        if (flags & (ModifiedN | ModifiedNW) )
         {
             nn = n + nw;
             a.resize(nn);
             v.resize(nn);
             d.resize(nn);
-            if (!OQ) W_.resize(n, nw);
+            W_.resize(n, nw);
             W.resize(n, nw);
             makeBaseWImpl();
         }
 
-        if (flags & KALMAN_P_MODIFIED)
+        if (flags & ModifiedP)
         {
             U.resize(n, nn);
-            for (K_UINT_32 i = 0; i < n + 0; ++i)
-                for (K_UINT_32 j = 0; j < n + 0; ++j)
+            for (unsigned i = 0; i < n; ++i)
+                for (unsigned j = 0; j < n; ++j)
                     U(i,j) = _P(i,j);
 
             factor(U);
 
         }
-        else if (flags & KALMAN_NW_MODIFIED)
+        else if (flags & ModifiedNW)
         {
-            _P.resize(n, nn);
-            for (K_UINT_32 i = 0; i < n + 0; ++i)
-                for (K_UINT_32 j = i; j < n + 0; ++j)
+            _P.Resize(n, nn);
+            for (unsigned i = 0; i < n; ++i)
+                for (unsigned j = i; j < n; ++j)
                     _P(i,j) = U(i,j);
 
             U.swap(_P);
         }
 
-        if (flags & KALMAN_NW_MODIFIED)
+        if (flags & ModifiedNW)
         {
-            if (!OQ) Q_.resize(nw, nw);
-            Q.resize(nw, nw);
+            Q_.Resize(nw, nw);
+            Q.Resize(nw, nw);
             makeBaseQImpl();
         }
 
         if (m != 0)
         {
-            if (flags & (KALMAN_N_MODIFIED | KALMAN_M_MODIFIED) )
+            if (flags & (ModifiedN | ModifiedM) )
             {
-                if (!OVR) H_.resize(m, n);
-                H.resize(m, n);
+                H_.Resize(m, n);
+                H.Resize(m, n);
                 makeBaseHImpl();
             }
 
-            if (flags & (KALMAN_M_MODIFIED | KALMAN_NV_MODIFIED) )
+            if (flags & (ModifiedM | ModifiedNV) )
             {
-                V.resize(m, nv);
+                V.Resize(m, nv);
                 makeBaseVImpl();
             }
 
-          if (flags & KALMAN_NV_MODIFIED) {
-            R.resize(nv, nv);
+          if (flags & ModifiedNV) {
+            R.Resize(nv, nv);
             makeBaseRImpl();
           }
 
-          if (flags & KALMAN_M_MODIFIED) {
-            R_.resize(m, m);
-            z.resize(m);
-            dz.resize(m);
+          if (flags & ModifiedM) {
+            R_.Resize(m, m);
+            z.Resize(m);
+            dz.Resize(m);
           }
 
         }
 
-        flags &= ~KALMAN_LOWMASK;
+        flags &= ~Lowmask;
     }
 
 
     template<typename T>
-    void EFilter<T>::factor(Matrix& P_)
+    void Extended<T>::factor(Matrix& P_)
     {
         T alpha, beta;
-        K_UINT_32 i, j, k, N = P_.nrow();
-        for(j = N - 1 + 0; j > 0; --j)
+        unsigned i, j, k, N = P_.Rows();
+        for(j = N - 1; j > 0; --j)
         {
             alpha = T(1.0)/P_(j,j);
             for(k = 0; k < j; ++k)
@@ -662,13 +657,13 @@ namespace Kalman
 
 
     template<typename T>
-    void EFilter<T>::upperInvert(Matrix& P_)
+    void Extended<T>::upperInvert(Matrix& P_)
     {
         T val;
-        K_UINT_32 i, j, k, N = P_.nrow();
-        for (i = N - 2 + 0; i != (K_UINT_32)(0-1); --i)
+        unsigned i, j, k, N = P_.Rows();
+        for (i = N - 2; i != -1; --i)
         {
-            for (k = i + 1; k < N + 0; ++k)
+            for (k = i + 1; k < N; ++k)
             {
                 val = P_(i,k);
                 for (j = i + 1; j <= k - 1; ++j)
@@ -680,17 +675,17 @@ namespace Kalman
 
 
     template<typename T>
-    void EFilter<T>::timeUpdate()
+    void Extended<T>::timeUpdate()
     {
-        K_UINT_32 i, j, k;
+        unsigned i, j, k;
         T sigma, dinv;
 
-        for(j = n - 1 + 0; j > 0; --j)
+        for(j = n - 1; j > 0; --j)
         {
             for(i = 0; i <= j; ++i)
                 d(i) = U(i,j);
 
-            for(i = 0; i < n + 0; ++i)
+            for(i = 0; i < n; ++i)
             {
                 U(i,j) = A(i,j);
                 for(k = 0; k < j; ++k)
@@ -700,17 +695,17 @@ namespace Kalman
 
         d(0) = U(0,0);
 
-        for(j = 0; j < n + 0; ++j)
+        for(j = 0; j < n; ++j)
             U(j,0) = A(j,0);
 
-        for(i = 0; i < nw + 0; ++i)
+        for(i = 0; i < nw; ++i)
         {
             d(i+n) = Q(i,i);
-            for(j = 0; j < n + 0; ++j)
+            for(j = 0; j < n; ++j)
                 U(j,i+n) = W(j,i);
         }
 
-        for(j = n - 1 + 0; j != (K_UINT_32)(0-1); --j)
+        for(j = n - 1; j != -1; --j)
         {
             sigma = T(0.0);
             for(k = 0; k < nn + 0; ++k)
@@ -728,34 +723,34 @@ namespace Kalman
             {
                 sigma = T(0.0);
 
-                for(i = 0; i < nn + 0; ++i)
+                for(i = 0; i < nn; ++i)
                     sigma += U(k,i)*a(i);
 
                 sigma *= dinv;
 
-                for(i = 0; i < nn + 0; ++i)
+                for(i = 0; i < nn; ++i)
                     U(k,i) -= sigma*v(i);
 
                 U(j,k) = sigma;
             }
         }
 
-        for(j = 0 + 1; j < n + 0; ++j)
+        for(j = 1; j < n; ++j)
             for(i = 0; i < j; ++i)
                 U(i,j) = U(j,i);
     }
 
 
     template<typename T>
-    void EFilter<T>::measureUpdate(T dz, T)
+    void Extended<T>::measureUpdate(T dz, T)
     {
-        K_UINT_32 i, j, k;
+        unsigned i, j, k;
         T alpha, gamma, beta, lambda;
 
-        for (j = 0; j < n + 0; ++j)
+        for (j = 0; j < n; ++j)
             dz -= a(j)*_x(j);
 
-        for(j = n - 1 + 0; j > 0; --j)
+        for(j = n - 1; j > 0; --j)
         {
             for(k = 0; k < j; ++k)
                 a(j) += U(k,j)*a(k);
@@ -767,7 +762,7 @@ namespace Kalman
         gamma = T(1.0)/alpha;
         U(0,0) = r*gamma*U(0,0);
 
-        for(j = 0 + 1; j < n; ++j)
+        for(j = 1; j < n; ++j)
         {
             beta = alpha;
             alpha += d(j)*a(j);
@@ -784,109 +779,116 @@ namespace Kalman
         }
 
         dz *= gamma;
-        for(j = 0; j < n + 0; ++j)
+        for(j = 0; j < n; ++j)
             _x(j) += d(j)*dz;
     }
 
+    
     template<typename T>
-    void EFilter<T>::makeBaseAImpl()
+    void Extended<T>::makeBaseAImpl()
     {
         modified_ = true;
         makeBaseA();
-        if (modified_) flags |= KALMAN_A_MODIFIED;
+        if (modified_) flags |= ModifiedA;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseWImpl()
+    void Extended<T>::makeBaseWImpl()
     {
         modified_ = true;
         makeBaseW();
-        if (modified_) flags |= KALMAN_W_MODIFIED;
+        if (modified_) flags |= ModifiedW;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeBaseQImpl()
+    void Extended<T>::makeBaseQImpl()
     {
         modified_ = true;
         makeBaseQ();
-        if (modified_) flags |= KALMAN_Q_MODIFIED;
+        if (modified_) flags |= ModifiedQ;
     }
-
-
+    
+    
     template<typename T>
-      void EFilter<T>::makeBaseHImpl() {
+    void Extended<T>::makeBaseHImpl() 
+    {
         modified_ = true;
         makeBaseH();
-        if (modified_)
-          flags |= KALMAN_H_MODIFIED;
-      }
-
-      template<typename T>
-      void EFilter<T>::makeBaseVImpl() {
-        modified_ = true;
-        makeBaseV();
-        if (modified_)
-          flags |= KALMAN_V_MODIFIED;
-      }
-
-      template<typename T>
-      void EFilter<T>::makeBaseRImpl() {
-        modified_ = true;
-        makeBaseR();
-        if (modified_)
-          flags |= KALMAN_R_MODIFIED;
-      }
-
-      template<typename T>
-      void EFilter<T>::makeAImpl()
-      {
-        modified_ = true;
-        makeA();
-        if (modified_)
-          flags |= KALMAN_A_MODIFIED;
-      }
+        if (modified_) flags |= ModifiedH;
+    }
+    
 
     template<typename T>
-    void EFilter<T>::makeWImpl()
+    void Extended<T>::makeBaseVImpl() 
+    {
+        modified_ = true;
+        makeBaseV();
+        if (modified_) flags |= ModifiedV;
+    }
+    
+
+    template<typename T>
+    void Extended<T>::makeBaseRImpl() 
+    {
+        modified_ = true;
+        makeBaseR();
+        if (modified_) flags |= ModifiedR;
+    }
+    
+
+    template<typename T>
+    void Extended<T>::makeAImpl()
+    {
+        modified_ = true;
+        makeA();
+        if (modified_) flags |= ModifiedA;
+    }
+    
+
+    template<typename T>
+    void Extended<T>::makeWImpl()
     {
         modified_ = true;
         makeW();
-        if (modified_) flags |= KALMAN_W_MODIFIED;
+        if (modified_) flags |= ModifiedW;
     }
 
+    
     template<typename T>
-    void EFilter<T>::makeQImpl()
+    void Extended<T>::makeQImpl()
     {
         modified_ = true;
         makeQ();
-        if (modified_) flags |= KALMAN_Q_MODIFIED;
+        if (modified_) flags |= ModifiedQ;
     }
+    
 
     template<typename T>
-    void EFilter<T>::makeHImpl()
+    void Extended<T>::makeHImpl()
     {
         modified_ = true;
         makeH();
-        if (modified_) flags |= KALMAN_H_MODIFIED;
+        if (modified_) flags |= ModifiedH;
     }
+    
 
     template<typename T>
-    void EFilter<T>::makeVImpl()
+    void Extended<T>::makeVImpl()
     {
         modified_ = true;
         makeV();
-        if (modified_) flags |= KALMAN_V_MODIFIED;
+        if (modified_) flags |= ModifiedV;
     }
 
 
     template<typename T>
-    void EFilter<T>::makeRImpl()
+    void Extended<T>::makeRImpl()
     {
         modified_ = true;
         makeR();
-        if (modified_) flags |= KALMAN_R_MODIFIED;
+        if (modified_) flags |= ModifiedR;
     }
 }
 

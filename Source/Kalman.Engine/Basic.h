@@ -6,11 +6,11 @@
 namespace Kalman
 {
     template<typename T>
-    class Filter : public EFilter<T>
+    class Basic : public Extended<T>
     {
     public:
 
-        virtual ~Filter() = 0;
+        virtual ~Basic() = 0;
 
     protected:
 
@@ -26,66 +26,66 @@ namespace Kalman
 
 
     template<typename T>
-    Filter<T>::~Filter()
+    Basic<T>::~Basic()
     {
     }
 
     template<typename T>
-    void Filter<T>::makeBaseB()
+    void Basic<T>::makeBaseB()
     {
     }
 
     template<typename T>
-    void Filter<T>::makeB()
+    void Basic<T>::makeB()
     {
     }
 
     template<typename T>
-    void Filter<T>::makeProcess()
+    void Basic<T>::makeProcess()
     {
         makeB();
 
         px.resize(n);
 
-        for (unsigned i = 0; i < n; ++i)
+        for (unsigned i = 0; i < n; i++)
         {
           px(i) = T(0.0);
 
-          for (unsigned j = 0; j < n; ++j)
+          for (unsigned j = 0; j < n; j++)
             px(i) += A(i,j) * x(j);
 
-          for (unsigned j = 0; j < nu; ++j)
+          for (unsigned j = 0; j < nu; j++)
             px(i) += B(i,j) * u(j);
 
         }
 
-        x.swap(px);
+        x.Swap(px);
 
     }
 
     template<typename T>
-    void Filter<T>::makeMeasure()
+    void Basic<T>::makeMeasure()
     {
-        z.resize(m);
-        for (unsigned i = 0; i < m; ++i)
+        z.Resize(m);
+        for (unsigned i = 0; i < m; i++)
         {
           z(i) = T(0.0);
 
-          for (unsigned j = 0; j < n; ++j)
+          for (unsigned j = 0; j < n; j++)
             z(i) += H(i,j) * x(j);
         }
     }
 
     template<typename T>
-    void Filter<T>::sizeUpdate()
+    void Basic<T>::sizeUpdate()
     {
-        if (flags & ( KALMAN_N_MODIFIED | KALMAN_NU_MODIFIED ) )
+        if (flags & (ModifiedN|ModifiedNU))
         {
-            B.resize(n, nu);
+            B.Resize(n, nu);
             makeBaseB();
         }
 
-        EFilter<T>::sizeUpdate();
+        Extended<T>::sizeUpdate();
     }
 }
 
