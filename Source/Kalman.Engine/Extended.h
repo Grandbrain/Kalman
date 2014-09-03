@@ -8,21 +8,21 @@ namespace Kalman
 {
     enum State
     {
-        ModifiedN = 1,
-        ModifiedNU = (1<<1),
-        ModifiedNW = (1<<2),
-        ModifiedM = (1<<3),
-        ModifiedNV = (1<<4),
-        ModifiedP = (1<<5),
-        Lowmask = ((1<<8) - 1),
-        ModifiedA = (1<<8),
-        ModifiedW = (1<<9),
-        ModifiedQ = (1<<10),
-        Midmask = ( ((1<<4) - 1) << 8 ),
-        ModifiedH = (1<<12),
-        ModifiedV = (1<<13),
-        ModifiedR = (1<<14),
-        Highmask = ( ((1<<4) - 1) << 12 )
+        ModifiedN   = 1,
+        ModifiedNU  = (1<<1),
+        ModifiedNW  = (1<<2),
+        ModifiedM   = (1<<3),
+        ModifiedNV  = (1<<4),
+        ModifiedP   = (1<<5),
+        Lowmask     = ((1<<8) - 1),
+        ModifiedA   = (1<<8),
+        ModifiedW   = (1<<9),
+        ModifiedQ   = (1<<10),
+        Midmask     = ( ((1<<4) - 1) << 8 ),
+        ModifiedH   = (1<<12),
+        ModifiedV   = (1<<13),
+        ModifiedR   = (1<<14),
+        Highmask    = ( ((1<<4) - 1) << 12 )
     };
 
     template<typename T>
