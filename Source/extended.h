@@ -1,8 +1,8 @@
 #ifndef KEFILTER_H
 #define KEFILTER_H
 
-#include <kVector.h>
-#include <kMatrix.h>
+#include <vector.h>
+#include <matrix.h>
 
 namespace Kalman
 {

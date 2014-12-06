@@ -1,7 +1,7 @@
 #ifndef KFILTER_H
 #define KFILTER_H
 
-#include <kEFilter.h>
+#include <extended.h>
 
 namespace Kalman
 {
