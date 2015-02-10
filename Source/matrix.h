@@ -1,5 +1,5 @@
-#ifndef KMATRIX_H
-#define KMATRIX_H
+#ifndef MATRIX_H
+#define MATRIX_H
 
 #include <vector>
 
@@ -92,7 +92,7 @@ namespace Kalman
     inline void Matrix<T>::Resize(unsigned m, unsigned n)
     {
         data.resize(m);
-        for(unsigned i = 0; i < data.size(); i++)
+        for (unsigned i = 0; i < data.size(); i++)
             data[i].assign(n);
     }
 
@@ -100,7 +100,7 @@ namespace Kalman
     inline void Matrix<T>::Resize(unsigned m, unsigned n, const T& a)
     {
         data.resize(m);
-        for(unsigned i = 0; i < data.size(); i++)
+        for (unsigned i = 0; i < data.size(); i++)
             data[i].assign(n, a);
     }
 }

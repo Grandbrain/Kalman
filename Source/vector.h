@@ -1,5 +1,5 @@
 #ifndef KVECTOR_H
-#define KVECTOR_H
+#define VECTOR_H
 
 #include <vector>
 

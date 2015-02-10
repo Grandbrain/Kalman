@@ -1,7 +1,7 @@
-#ifndef KFILTER_H
-#define KFILTER_H
+#ifndef BASIC_H
+#define BASIC_H
 
-#include <extended.h>
+#include "extended.h"
 
 namespace Kalman
 {
@@ -20,8 +20,8 @@ namespace Kalman
         virtual void makeMeasure();
         virtual void sizeUpdate();
 
-        Vector px;
-        Matrix B;
+        Vector<T> px;
+        Matrix<T> B;
     };
 
 
@@ -49,13 +49,13 @@ namespace Kalman
 
         for (unsigned i = 0; i < n; i++)
         {
-          px(i) = T(0.0);
+            px(i) = T(0.0);
 
-          for (unsigned j = 0; j < n; j++)
-            px(i) += A(i,j) * x(j);
+            for (unsigned j = 0; j < n; j++)
+                px(i) += A(i, j) * x(j);
 
-          for (unsigned j = 0; j < nu; j++)
-            px(i) += B(i,j) * u(j);
+            for (unsigned j = 0; j < nu; j++)
+                px(i) += B(i, j) * u(j);
 
         }
 
@@ -69,17 +69,17 @@ namespace Kalman
         z.Resize(m);
         for (unsigned i = 0; i < m; i++)
         {
-          z(i) = T(0.0);
+            z(i) = T(0.0);
 
-          for (unsigned j = 0; j < n; j++)
-            z(i) += H(i,j) * x(j);
+            for (unsigned j = 0; j < n; j++)
+                z(i) += H(i, j) * x(j);
         }
     }
 
     template<typename T>
     void Basic<T>::sizeUpdate()
     {
-        if (flags & (ModifiedN|ModifiedNU))
+        if (flags & (ModifiedN | ModifiedNU))
         {
             B.Resize(n, nu);
             makeBaseB();
