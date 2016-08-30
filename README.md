@@ -3,7 +3,7 @@
 
 # Welcome to Kalman project!
 
-[Kalman](https://github.com/Grandbrain/Kalman) is a cross-platform header-only library implementing an Extended Kalman Filter in C++. Library provides configurable template classes. Subclassing allows to define different matrix contents for the filter to work with. Kalman filters are used for some time now, in aeronautics, robot vision and robotics in general. It is useful to estimate a state vector and correct the estimation by using measures taken from sensors.
+[Kalman](https://github.com/Grandbrain/Kalman) is a cross-platform library implementing an Extended Kalman Filter in C++. Library provides configurable template classes. Subclassing allows to define different matrix contents for the filter to work with. Kalman filters are used for some time now, in aeronautics, robot vision and robotics in general. It is useful to estimate a state vector and correct the estimation by using measures taken from sensors.
 
 
 ## Contribute
