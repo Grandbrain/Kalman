@@ -18,7 +18,6 @@ namespace Kalman
 
         inline T& operator()(unsigned, unsigned);
         inline const T& operator()(unsigned, unsigned) const;
-        inline Matrix& operator=(const Matrix&);
 
     public:
 
@@ -63,14 +62,6 @@ namespace Kalman
     inline const T& Matrix<T>::operator()(unsigned i, unsigned j) const
     {
         return data[i][j];
-    }
-
-
-    template<typename T>
-    inline Matrix<T>& Matrix<T>::operator=(const Matrix& m)
-    {
-        data = m.data;
-        return *this;
     }
 
 
