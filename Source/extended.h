@@ -236,8 +236,8 @@ namespace Kalman
     template<typename T>
     void Extended<T>::setSizeV(unsigned nv_)
     {
-        if (nv_ == nv)
-            flags |= ModifiedNV;
+        if (nv_ == nv) return;
+		flags |= ModifiedNV;
         nv = nv_;
     }
 
@@ -326,7 +326,7 @@ namespace Kalman
 
         makeDZ();
 
-        if (flags & (KALMAN_V_MODIFIED | KALMAN_R_MODIFIED))
+        if (flags & (ModifiedV | ModifiedR))
         {
             _x.resize(nv);
             for (i = 0; i < m; ++i)
@@ -350,14 +350,14 @@ namespace Kalman
             upperInvert(R_);
         }
 
-        if (flags & (KALMAN_H_MODIFIED | KALMAN_V_MODIFIED | KALMAN_R_MODIFIED))
+        if (flags & (ModifiedH | ModifiedV | ModifiedR))
         {
             for (i = 0; i < m; ++i)
             {
                 for (j = 0; j < n; ++j)
                 {
                     H_(i, j) = H(i, j);
-                    for (k = i + 1; k < m + 0; ++k)
+                    for (k = i + 1; k < m; ++k)
                         H_(i, j) += R_(k, i)*H(k, j);
                 }
             }
@@ -386,11 +386,11 @@ namespace Kalman
             measureUpdate(dz(i), R_(i, i));
         }
 
-        for (i = 0; i < n + 0; ++i)
+        for (i = 0; i < n; ++i)
             x(i) += _x(i);
 
         if (!OVR) H.swap(H_);
-        flags &= ~KALMAN_HIGHMASK;
+        flags &= ~Highmask;
     }
 
 
@@ -708,7 +708,7 @@ namespace Kalman
         for (j = n - 1; j != -1; --j)
         {
             sigma = T(0.0);
-            for (k = 0; k < nn + 0; ++k)
+            for (k = 0; k < nn; ++k)
             {
                 v(k) = U(j, k);
                 a(k) = d(k)*v(k);
