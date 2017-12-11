@@ -1,5 +1,8 @@
-[![Release](https://img.shields.io/badge/Release-v1.0.0-brightgreen.svg)](https://github.com/Grandbrain/Kalman/releases)
-[![Licence](https://img.shields.io/badge/License-Apache-blue.svg)](https://github.com/Grandbrain/Kalman/blob/master/LICENSE)
+[![GitHub release](https://img.shields.io/github/release/Grandbrain/Kalman.svg)](https://github.com/Grandbrain/Kalman/releases)
+[![GitHub issues](https://img.shields.io/github/issues/Grandbrain/Kalman.svg)](https://github.com/Grandbrain/Kalman/issues)
+[![GitHub forks](https://img.shields.io/github/forks/Grandbrain/Kalman.svg)](https://github.com/Grandbrain/Kalman/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/Grandbrain/Kalman.svg)](https://github.com/Grandbrain/Kalman/stargazers)
+[![GitHub license](https://img.shields.io/github/license/Grandbrain/Kalman.svg)](https://github.com/Grandbrain/Kalman/blob/master/LICENSE)
 
 # Welcome to Kalman project!
 
