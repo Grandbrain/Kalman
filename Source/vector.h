@@ -13,7 +13,7 @@ namespace Kalman
         inline Vector();
         inline Vector(unsigned);
         inline Vector(unsigned, const T&);
-		inline Vector(unsigned, const T*);
+	inline Vector(unsigned, const T*);
 
     public:
 
@@ -25,7 +25,7 @@ namespace Kalman
         inline unsigned Size() const;
         inline void Resize(unsigned);
         inline void Resize(unsigned, const T&);
-		inline void Resize(unsigned, const T*);
+	inline void Resize(unsigned, const T*);
         inline void Swap(Vector&);
 
     private:
@@ -43,20 +43,20 @@ namespace Kalman
     template<typename T>
     inline Vector<T>::Vector(unsigned n)
     {
-		Resize(n);
+	Resize(n);
     }
 
 
     template<typename T>
     inline Vector<T>::Vector(unsigned n, const T& a)
     {
-		Resize(n, a);
+	Resize(n, a);
     }
 	
-	template<typename T>
+    template<typename T>
     inline Vector<T>::Vector(unsigned n, const T* v)
     {
-		Resize(n, v);
+	Resize(n, v);
     }
 
     template<typename T>
@@ -94,12 +94,12 @@ namespace Kalman
     }
 	
 	
-	template<typename T>
+    template<typename T>
     inline void Vector<T>::Resize(unsigned n, const T* v)
     {
         data.resize(n);
-		for(unsigned i = 0; i < data.size(); i++)
-			data[i] = v[i];
+	for(unsigned i = 0; i < data.size(); i++)
+	    data[i] = v[i];
     }
 
 
