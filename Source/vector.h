@@ -1,4 +1,4 @@
-#ifndef KVECTOR_H
+#ifndef VECTOR_H
 #define VECTOR_H
 
 #include <vector>
@@ -13,6 +13,7 @@ namespace Kalman
         inline Vector();
         inline Vector(unsigned);
         inline Vector(unsigned, const T&);
+		inline Vector(unsigned, const T*);
 
     public:
 
@@ -24,6 +25,7 @@ namespace Kalman
         inline unsigned Size() const;
         inline void Resize(unsigned);
         inline void Resize(unsigned, const T&);
+		inline void Resize(unsigned, const T*);
         inline void Swap(Vector&);
 
     private:
@@ -39,14 +41,22 @@ namespace Kalman
 
 
     template<typename T>
-    inline Vector<T>::Vector(unsigned n) : data(n)
+    inline Vector<T>::Vector(unsigned n)
     {
+		Resize(n);
     }
 
 
     template<typename T>
-    inline Vector<T>::Vector(unsigned n, const T& a) : data(n, a)
+    inline Vector<T>::Vector(unsigned n, const T& a)
     {
+		Resize(n, a);
+    }
+	
+	template<typename T>
+    inline Vector<T>::Vector(unsigned n, const T* v)
+    {
+		Resize(n, v);
     }
 
     template<typename T>
@@ -81,6 +91,15 @@ namespace Kalman
     inline void Vector<T>::Resize(unsigned n, const T& a)
     {
         data.resize(n, a);
+    }
+	
+	
+	template<typename T>
+    inline void Vector<T>::Resize(unsigned n, const T* v)
+    {
+        data.resize(n);
+		for(unsigned i = 0; i < data.size(); i++)
+			data[i] = v[i];
     }
 
 
