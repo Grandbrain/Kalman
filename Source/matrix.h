@@ -13,6 +13,7 @@ namespace Kalman
         inline Matrix();
         inline Matrix(unsigned, unsigned);
         inline Matrix(unsigned, unsigned, const T&);
+		inline Matrix(unsigned, unsigned, const T*);
 
     public:
 
@@ -25,6 +26,7 @@ namespace Kalman
         inline unsigned Columns() const;
         inline void Resize(unsigned, unsigned);
         inline void Resize(unsigned, unsigned, const T&);
+		inline void Resize(unsigned, unsigned, const T*)
 
     private:
 
@@ -49,6 +51,12 @@ namespace Kalman
     inline Matrix<T>::Matrix(unsigned m, unsigned n, const T& a)
     {
         Resize(m, n, a);
+    }
+	
+	template<typename T>
+    inline Matrix<T>::Matrix(unsigned m, unsigned n, const T* v)
+    {
+        Resize(m, n, v);
     }
 
     template<typename T>
@@ -93,6 +101,18 @@ namespace Kalman
         data.resize(m);
         for (unsigned i = 0; i < data.size(); i++)
             data[i].assign(n, a);
+    }
+	
+	template<typename T>
+    inline void Matrix<T>::Resize(unsigned m, unsigned n, const T* v)
+    {
+        data.resize(m);
+        for (unsigned i = 0; i < data.size(); i++)
+		{
+            data[i].assign(n);
+			for (unsigned j = 0; j < data[i].size(); i++)
+				data[i][j] = v[i * m + j];
+		}
     }
 }
 
