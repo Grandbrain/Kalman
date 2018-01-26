@@ -4,48 +4,42 @@
 #include "vector.h"
 #include "matrix.h"
 
-namespace Kalman
-{
-    enum State
-    {
-        ModifiedN   = 1,
-        ModifiedNU  = (1 << 1),
-        ModifiedNW  = (1 << 2),
-        ModifiedM   = (1 << 3),
-        ModifiedNV  = (1 << 4),
-        ModifiedP   = (1 << 5),
-        Lowmask     = ((1 << 8) - 1),
-        ModifiedA   = (1 << 8),
-        ModifiedW   = (1 << 9),
-        ModifiedQ   = (1 << 10),
-        Midmask     = (((1 << 4) - 1) << 8),
-        ModifiedH   = (1 << 12),
-        ModifiedV   = (1 << 13),
-        ModifiedR   = (1 << 14),
-        Highmask    = (((1 << 4) - 1) << 12)
+namespace Kalman {
+
+    enum State {
+        ModifiedN = 1,
+        ModifiedNU = (1 << 1),
+        ModifiedNW = (1 << 2),
+        ModifiedM = (1 << 3),
+        ModifiedNV = (1 << 4),
+        ModifiedP = (1 << 5),
+        Lowmask = ((1 << 8) - 1),
+        ModifiedA = (1 << 8),
+        ModifiedW = (1 << 9),
+        ModifiedQ = (1 << 10),
+        Midmask = (((1 << 4) - 1) << 8),
+        ModifiedH = (1 << 12),
+        ModifiedV = (1 << 13),
+        ModifiedR = (1 << 14),
+        Highmask = (((1 << 4) - 1) << 12)
     };
 
-    template<typename T>
-    class Extended
-    {
+    template <typename T>
+    class Extended {
     public:
-
         explicit Extended();
         explicit Extended(unsigned, unsigned, unsigned, unsigned, unsigned);
-        virtual ~Extended();
-
+        virtual ~Extended() = default;
         unsigned getSizeX() const;
         unsigned getSizeU() const;
         unsigned getSizeW() const;
         unsigned getSizeZ() const;
         unsigned getSizeV() const;
-
         void setSizeX(unsigned);
         void setSizeU(unsigned);
         void setSizeW(unsigned);
         void setSizeZ(unsigned);
         void setSizeV(unsigned);
-
         void init(Vector<T>&, Matrix<T>&);
         void step(Vector<T>&, const Vector<T>&);
         void timeUpdateStep(Vector<T>&);
@@ -56,7 +50,6 @@ namespace Kalman
         const Matrix<T>& calculateP() const;
 
     protected:
-
         virtual void makeBaseA();
         virtual void makeBaseW();
         virtual void makeBaseQ();
@@ -76,7 +69,6 @@ namespace Kalman
         virtual void makeDZ();
         virtual void sizeUpdate();
 
-
         Vector<T> x;
         Vector<T> u;
         Vector<T> z;
@@ -89,22 +81,20 @@ namespace Kalman
         Matrix<T> V;
         Matrix<T> R;
 
-
         unsigned n;
         unsigned nu;
         unsigned nw;
-        unsigned  m;
+        unsigned m;
         unsigned nv;
 
+        unsigned flags;
+
     private:
-
-
         static void factor(Matrix<T>&);
         static void upperInvert(Matrix<T>&);
+
         void timeUpdate();
         void measureUpdate(T, T);
-
-
         void makeBaseAImpl();
         void makeBaseWImpl();
         void makeBaseQImpl();
@@ -118,7 +108,6 @@ namespace Kalman
         void makeVImpl();
         void makeRImpl();
 
-
         Matrix<T> U;
         Matrix<T> W_;
         Matrix<T> Q_;
@@ -129,25 +118,24 @@ namespace Kalman
         Vector<T> d;
         Vector<T> v;
 
-        unsigned nn;
-
         mutable Matrix<T> _P;
         mutable Vector<T> _x;
 
-        unsigned flags;
+        unsigned nn;
         bool modified_;
     };
 
 
-    template<typename T>
-    Extended<T>::Extended() : flags(0)
-    {
+    template <typename T>
+    Extended<T>::Extended() : flags(0), modified_(), n(), nu(), nw(), m(), nv
+            (), nn() {
     }
 
 
-    template<typename T>
-    Extended<T>::Extended(unsigned n_, unsigned nu_, unsigned nw_, unsigned m_, unsigned nv_) : flags(0)
-    {
+    template <typename T>
+    Extended<T>::Extended(unsigned n_, unsigned nu_, unsigned nw_, unsigned m_,
+                          unsigned nv_) : flags(0), modified_(), n(), nu(),
+                                          nw(), m(), nv(), nn() {
         setSizeX(n_);
         setSizeU(nu_);
         setSizeW(nw_);
@@ -156,116 +144,97 @@ namespace Kalman
     }
 
 
-    template<typename T>
-    Extended<T>::~Extended()
-    {
-    }
-
-
-    template<typename T>
-    unsigned Extended<T>::getSizeX() const
-    {
+    template <typename T>
+    unsigned Extended<T>::getSizeX() const {
         return n;
     }
 
 
-    template<typename T>
-    unsigned Extended<T>::getSizeU() const
-    {
+    template <typename T>
+    unsigned Extended<T>::getSizeU() const {
         return nu;
     }
 
 
-    template<typename T>
-    unsigned Extended<T>::getSizeW() const
-    {
+    template <typename T>
+    unsigned Extended<T>::getSizeW() const {
         return nw;
     }
 
 
-    template<typename T>
-    unsigned Extended<T>::getSizeZ() const
-    {
+    template <typename T>
+    unsigned Extended<T>::getSizeZ() const {
         return m;
     }
 
 
-    template<typename T>
-    unsigned Extended<T>::getSizeV() const
-    {
+    template <typename T>
+    unsigned Extended<T>::getSizeV() const {
         return nv;
     }
 
 
-    template<typename T>
-    void Extended<T>::setSizeX(unsigned n_)
-    {
+    template <typename T>
+    void Extended<T>::setSizeX(unsigned n_) {
         if (n_ == n) return;
         flags |= ModifiedN;
         n = n_;
     }
 
 
-    template<typename T>
-    void Extended<T>::setSizeU(unsigned nu_)
-    {
+    template <typename T>
+    void Extended<T>::setSizeU(unsigned nu_) {
         if (nu_ == nu) return;
         flags |= ModifiedNU;
         nu = nu_;
     }
 
 
-    template<typename T>
-    void Extended<T>::setSizeW(unsigned nw_)
-    {
+    template <typename T>
+    void Extended<T>::setSizeW(unsigned nw_) {
         if (nw_ == nw) return;
         flags |= ModifiedNW;
         nw = nw_;
     }
 
 
-    template<typename T>
-    void Extended<T>::setSizeZ(unsigned m_)
-    {
+    template <typename T>
+    void Extended<T>::setSizeZ(unsigned m_) {
         if (m_ == m) return;
         flags |= ModifiedM;
         m = m_;
     }
 
 
-    template<typename T>
-    void Extended<T>::setSizeV(unsigned nv_)
-    {
+    template <typename T>
+    void Extended<T>::setSizeV(unsigned nv_) {
         if (nv_ == nv) return;
-		flags |= ModifiedNV;
+        flags |= ModifiedNV;
         nv = nv_;
     }
 
 
-    template<typename T>
-    void Extended<T>::init(Vector<T>& x_, Matrix<T>& P_)
-    {
-        x.swap(x_);
-        _P.swap(P_);
+    template <typename T>
+    void Extended<T>::init(Vector<T>& x_, Matrix<T>& P_) {
+        x.Swap(x_);
+        _P.Swap(P_);
         flags |= ModifiedP;
     }
 
 
-    template<typename T>
-    void Extended<T>::step(Vector<T>& u_, const Vector<T>& z_)
-    {
+    template <typename T>
+    void Extended<T>::step(Vector<T>& u_, const Vector<T>& z_) {
         timeUpdateStep(u_);
         measureUpdateStep(z_);
     }
 
 
-    template<typename T>
-    void Extended<T>::timeUpdateStep(Vector<T>& u_)
-    {
+    template <typename T>
+    void Extended<T>::timeUpdateStep(Vector<T>& u_) {
         unsigned i, j, k;
 
         sizeUpdate();
-        u.swap(u_);
+        u.Swap(u_);
 
         makeCommonProcess();
         makeAImpl();
@@ -273,42 +242,37 @@ namespace Kalman
         makeQImpl();
         makeProcess();
 
-        if (flags & ModifiedQ)
-        {
+        if (flags & ModifiedQ) {
             Q_ = Q;
             factor(Q_);
             upperInvert(Q_);
         }
 
-        Q.swap(Q_);
+        Q.Swap(Q_);
 
-        if (flags & (ModifiedW | ModifiedQ))
-        {
-            for (i = 0; i < n; ++i)
-            {
-                for (j = 0; j < nw; ++j)
-                {
+        if (flags & (ModifiedW | ModifiedQ)) {
+            for (i = 0; i < n; ++i) {
+                for (j = 0; j < nw; ++j) {
                     W_(i, j) = W(i, j);
                     for (k = 0; k < j; ++k)
-                        W_(i, j) += W(i, k)*Q(j, k);
+                        W_(i, j) += W(i, k) * Q(j, k);
                 }
             }
         }
 
-        W.swap(W_);
+        W.Swap(W_);
         timeUpdate();
 
-        Q.swap(Q_);
-        W.swap(W_);
+        Q.Swap(Q_);
+        W.Swap(W_);
 
-        u.swap(u_);
+        u.Swap(u_);
         flags &= ~Midmask;
     }
 
 
-    template<typename T>
-    void Extended<T>::measureUpdateStep(const Vector<T>& z_)
-    {
+    template <typename T>
+    void Extended<T>::measureUpdateStep(const Vector<T>& z_) {
         unsigned i, j, k;
         sizeUpdate();
 
@@ -326,23 +290,19 @@ namespace Kalman
 
         makeDZ();
 
-        if (flags & (ModifiedV | ModifiedR))
-        {
-            _x.resize(nv);
-            for (i = 0; i < m; ++i)
-            {
-                for (j = 0; j < nv; ++j)
-                {
+        if (flags & (ModifiedV | ModifiedR)) {
+            _x.Resize(nv);
+            for (i = 0; i < m; ++i) {
+                for (j = 0; j < nv; ++j) {
                     _x(j) = T(0.0);
                     for (k = 0; k < nv; ++k)
-                        _x(j) += V(i, k)*R(k, j);
+                        _x(j) += V(i, k) * R(k, j);
                 }
 
-                for (j = 0; j < m; ++j)
-                {
+                for (j = 0; j < m; ++j) {
                     R_(i, j) = T(0.0);
                     for (k = 0; k < nv; ++k)
-                        R_(i, j) += _x(k)*V(j, k);
+                        R_(i, j) += _x(k) * V(j, k);
                 }
             }
 
@@ -350,36 +310,31 @@ namespace Kalman
             upperInvert(R_);
         }
 
-        if (flags & (ModifiedH | ModifiedV | ModifiedR))
-        {
-            for (i = 0; i < m; ++i)
-            {
-                for (j = 0; j < n; ++j)
-                {
+        if (flags & (ModifiedH | ModifiedV | ModifiedR)) {
+            for (i = 0; i < m; ++i) {
+                for (j = 0; j < n; ++j) {
                     H_(i, j) = H(i, j);
                     for (k = i + 1; k < m; ++k)
-                        H_(i, j) += R_(k, i)*H(k, j);
+                        H_(i, j) += R_(k, i) * H(k, j);
                 }
             }
         }
 
-        H.swap(H_);
-        _x.resize(m);
+        H.Swap(H_);
+        _x.Resize(m);
 
-        for (i = 0; i < m; ++i)
-        {
+        for (i = 0; i < m; ++i) {
             _x(i) = dz(i);
             for (k = i + 1; k < m; ++k)
-                _x(i) += R_(k, i)*dz(k);
+                _x(i) += R_(k, i) * dz(k);
         }
 
-        dz.swap(_x);
+        dz.Swap(_x);
 
-        _x.resize(n);
+        _x.Resize(n);
         _x = T(0.0);
 
-        for (i = 0; i < m; ++i)
-        {
+        for (i = 0; i < m; ++i) {
             for (j = 0; j < n; ++j)
                 a(j) = H(i, j);
 
@@ -389,64 +344,57 @@ namespace Kalman
         for (i = 0; i < n; ++i)
             x(i) += _x(i);
 
-        if (!OVR) H.swap(H_);
+        H.Swap(H_);
         flags &= ~Highmask;
     }
 
 
-    template<typename T>
-    const Vector<T>& Extended<T>::predict(Vector<T>& u_)
-    {
+    template <typename T>
+    const Vector<T>& Extended<T>::predict(Vector<T>& u_) {
         sizeUpdate();
-        u.swap(u_);
+        u.Swap(u_);
         _x = x;
 
         makeCommonProcess();
         makeProcess();
 
-        x.swap(_x);
-        u.swap(u_);
+        x.Swap(_x);
+        u.Swap(u_);
         return _x;
     }
 
 
-    template<typename T>
-    const Vector<T>& Extended<T>::simulate()
-    {
+    template <typename T>
+    const Vector<T>& Extended<T>::simulate() {
         sizeUpdate();
         _x = z;
 
         makeCommonMeasure();
         makeMeasure();
 
-        z.swap(_x);
+        z.Swap(_x);
         return _x;
     }
 
 
-    template<typename T>
-    const Vector<T>& Extended<T>::getX() const
-    {
+    template <typename T>
+    const Vector<T>& Extended<T>::getX() const {
         return x;
     }
 
 
-    template<typename T>
-    const Matrix<T>& Extended<T>::calculateP() const
-    {
-        if (!(flags & ModifiedP))
-        {
-            _P.resize(n, n);
-            for (unsigned i = 0; i < n; ++i)
-            {
+    template <typename T>
+    const Matrix<T>& Extended<T>::calculateP() const {
+        if (!(flags & ModifiedP)) {
+            _P.Resize(n, n);
+            for (unsigned i = 0; i < n; ++i) {
                 _P(i, i) = U(i, i);
-                for (unsigned j = i + 1; j < n; ++j)
-                {
-                    _P(i, j) = U(i, j)*U(j, j);
-                    _P(i, i) += U(i, j)*_P(i, j);
+                for (unsigned j = i + 1; j < n; ++j) {
+                    _P(i, j) = U(i, j) * U(j, j);
+                    _P(i, i) += U(i, j) * _P(i, j);
 
                     for (unsigned k = j + 1; k < n; ++k)
-                        _P(i, j) += U(i, k)*U(j, k)*U(k, k);
+                        _P(i, j) += U(i, k) * U(j, k) * U(k, k);
                     _P(j, i) = _P(i, j);
                 }
             }
@@ -455,167 +403,142 @@ namespace Kalman
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseA()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseA() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseW()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseW() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseQ()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseQ() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseH()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseH() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseV()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseV() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseR()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseR() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeCommonProcess()
-    {
+    template <typename T>
+    void Extended<T>::makeCommonProcess() {
     }
 
 
-    template<typename T>
-    void Extended<T>::makeCommonMeasure()
-    {
+    template <typename T>
+    void Extended<T>::makeCommonMeasure() {
     }
 
 
-    template<typename T>
-    void Extended<T>::makeA()
-    {
+    template <typename T>
+    void Extended<T>::makeA() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeW()
-    {
+    template <typename T>
+    void Extended<T>::makeW() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeQ()
-    {
+    template <typename T>
+    void Extended<T>::makeQ() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeH()
-    {
+    template <typename T>
+    void Extended<T>::makeH() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeV()
-    {
+    template <typename T>
+    void Extended<T>::makeV() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeR()
-    {
+    template <typename T>
+    void Extended<T>::makeR() {
         modified_ = false;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeDZ()
-    {
+    template <typename T>
+    void Extended<T>::makeDZ() {
     }
 
 
-    template<typename T>
-    void Extended<T>::sizeUpdate()
-    {
+    template <typename T>
+    void Extended<T>::sizeUpdate() {
         if (!flags) return;
-        if (flags & ModifiedN)
-        {
-            A.resize(n, n);
+        if (flags & ModifiedN) {
+            A.Resize(n, n);
             makeBaseAImpl();
         }
 
-        if (flags & (ModifiedN | ModifiedNW))
-        {
+        if (flags & (ModifiedN | ModifiedNW)) {
             nn = n + nw;
-            a.resize(nn);
-            v.resize(nn);
-            d.resize(nn);
-            W_.resize(n, nw);
-            W.resize(n, nw);
+            a.Resize(nn);
+            v.Resize(nn);
+            d.Resize(nn);
+            W_.Resize(n, nw);
+            W.Resize(n, nw);
             makeBaseWImpl();
         }
 
-        if (flags & ModifiedP)
-        {
-            U.resize(n, nn);
+        if (flags & ModifiedP) {
+            U.Resize(n, nn);
             for (unsigned i = 0; i < n; ++i)
                 for (unsigned j = 0; j < n; ++j)
                     U(i, j) = _P(i, j);
 
             factor(U);
 
-        }
-        else if (flags & ModifiedNW)
-        {
+        } else if (flags & ModifiedNW) {
             _P.Resize(n, nn);
             for (unsigned i = 0; i < n; ++i)
                 for (unsigned j = i; j < n; ++j)
                     _P(i, j) = U(i, j);
 
-            U.swap(_P);
+            U.Swap(_P);
         }
 
-        if (flags & ModifiedNW)
-        {
+        if (flags & ModifiedNW) {
             Q_.Resize(nw, nw);
             Q.Resize(nw, nw);
             makeBaseQImpl();
         }
 
-        if (m != 0)
-        {
-            if (flags & (ModifiedN | ModifiedM))
-            {
+        if (m != 0) {
+            if (flags & (ModifiedN | ModifiedM)) {
                 H_.Resize(m, n);
                 H.Resize(m, n);
                 makeBaseHImpl();
             }
 
-            if (flags & (ModifiedM | ModifiedNV))
-            {
+            if (flags & (ModifiedM | ModifiedNV)) {
                 V.Resize(m, nv);
                 makeBaseVImpl();
             }
@@ -637,59 +560,50 @@ namespace Kalman
     }
 
 
-    template<typename T>
-    void Extended<T>::factor(Matrix<T>& P_)
-    {
+    template <typename T>
+    void Extended<T>::factor(Matrix<T>& P_) {
         T alpha, beta;
-        unsigned i, j, k, N = P_.Rows();
-        for (j = N - 1; j > 0; --j)
-        {
+        std::size_t i, j, k, N = P_.Rows();
+        for (j = N - 1; j > 0; --j) {
             alpha = T(1.0) / P_(j, j);
-            for (k = 0; k < j; ++k)
-            {
+            for (k = 0; k < j; ++k) {
                 beta = P_(k, j);
-                P_(k, j) = alpha*beta;
+                P_(k, j) = alpha * beta;
                 for (i = 0; i <= k; ++i)
-                    P_(i, k) -= beta*P_(i, j);
+                    P_(i, k) -= beta * P_(i, j);
             }
         }
     }
 
 
-    template<typename T>
-    void Extended<T>::upperInvert(Matrix<T>& P_)
-    {
+    template <typename T>
+    void Extended<T>::upperInvert(Matrix<T>& P_) {
         T val;
-        unsigned i, j, k, N = P_.Rows();
-        for (i = N - 2; i != -1; --i)
-        {
-            for (k = i + 1; k < N; ++k)
-            {
+        std::size_t i, j, k, N = P_.Rows();
+        for (i = N - 2; i != -1; --i) {
+            for (k = i + 1; k < N; ++k) {
                 val = P_(i, k);
                 for (j = i + 1; j <= k - 1; ++j)
-                    val += P_(i, j)*P_(k, j);
+                    val += P_(i, j) * P_(k, j);
                 P_(k, i) = -val;
             }
         }
     }
 
 
-    template<typename T>
-    void Extended<T>::timeUpdate()
-    {
+    template <typename T>
+    void Extended<T>::timeUpdate() {
         unsigned i, j, k;
         T sigma, dinv;
 
-        for (j = n - 1; j > 0; --j)
-        {
+        for (j = n - 1; j > 0; --j) {
             for (i = 0; i <= j; ++i)
                 d(i) = U(i, j);
 
-            for (i = 0; i < n; ++i)
-            {
+            for (i = 0; i < n; ++i) {
                 U(i, j) = A(i, j);
                 for (k = 0; k < j; ++k)
-                    U(i, j) += A(i, k)*d(k);
+                    U(i, j) += A(i, k) * d(k);
             }
         }
 
@@ -698,38 +612,34 @@ namespace Kalman
         for (j = 0; j < n; ++j)
             U(j, 0) = A(j, 0);
 
-        for (i = 0; i < nw; ++i)
-        {
+        for (i = 0; i < nw; ++i) {
             d(i + n) = Q(i, i);
             for (j = 0; j < n; ++j)
                 U(j, i + n) = W(j, i);
         }
 
-        for (j = n - 1; j != -1; --j)
-        {
+        for (j = n - 1; j != -1; --j) {
             sigma = T(0.0);
-            for (k = 0; k < nn; ++k)
-            {
+            for (k = 0; k < nn; ++k) {
                 v(k) = U(j, k);
-                a(k) = d(k)*v(k);
-                sigma += v(k)*a(k);
+                a(k) = d(k) * v(k);
+                sigma += v(k) * a(k);
             }
 
             U(j, j) = sigma;
             if (j == 0 || sigma == T(0.0)) continue;
             dinv = T(1.0) / sigma;
 
-            for (k = 0; k < j; ++k)
-            {
+            for (k = 0; k < j; ++k) {
                 sigma = T(0.0);
 
                 for (i = 0; i < nn; ++i)
-                    sigma += U(k, i)*a(i);
+                    sigma += U(k, i) * a(i);
 
                 sigma *= dinv;
 
                 for (i = 0; i < nn; ++i)
-                    U(k, i) -= sigma*v(i);
+                    U(k, i) -= sigma * v(i);
 
                 U(j, k) = sigma;
             }
@@ -741,151 +651,135 @@ namespace Kalman
     }
 
 
-    template<typename T>
-    void Extended<T>::measureUpdate(T dz, T)
-    {
+    template <typename T>
+    void Extended<T>::measureUpdate(T dz, T r) {
         unsigned i, j, k;
         T alpha, gamma, beta, lambda;
 
         for (j = 0; j < n; ++j)
-            dz -= a(j)*_x(j);
+            dz -= a(j) * _x(j);
 
-        for (j = n - 1; j > 0; --j)
-        {
+        for (j = n - 1; j > 0; --j) {
             for (k = 0; k < j; ++k)
-                a(j) += U(k, j)*a(k);
-            d(j) = U(j, j)*a(j);
+                a(j) += U(k, j) * a(k);
+            d(j) = U(j, j) * a(j);
         }
 
-        d(0) = U(0, 0)*a(0);
-        alpha = r + d(0)*a(0);
+        d(0) = U(0, 0) * a(0);
+        alpha = r + d(0) * a(0);
         gamma = T(1.0) / alpha;
-        U(0, 0) = r*gamma*U(0, 0);
+        U(0, 0) = r * gamma * U(0, 0);
 
-        for (j = 1; j < n; ++j)
-        {
+        for (j = 1; j < n; ++j) {
             beta = alpha;
-            alpha += d(j)*a(j);
-            lambda = -a(j)*gamma;
+            alpha += d(j) * a(j);
+            lambda = -a(j) * gamma;
             gamma = T(1.0) / alpha;
-            U(j, j) *= beta*gamma;
+            U(j, j) *= beta * gamma;
 
-            for (i = 0; i < j; ++i)
-            {
+            for (i = 0; i < j; ++i) {
                 beta = U(i, j);
-                U(i, j) = beta + d(i)*lambda;
-                d(i) += d(j)*beta;
+                U(i, j) = beta + d(i) * lambda;
+                d(i) += d(j) * beta;
             }
         }
 
         dz *= gamma;
         for (j = 0; j < n; ++j)
-            _x(j) += d(j)*dz;
+            _x(j) += d(j) * dz;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseAImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseAImpl() {
         modified_ = true;
         makeBaseA();
         if (modified_) flags |= ModifiedA;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseWImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseWImpl() {
         modified_ = true;
         makeBaseW();
         if (modified_) flags |= ModifiedW;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseQImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseQImpl() {
         modified_ = true;
         makeBaseQ();
         if (modified_) flags |= ModifiedQ;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseHImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseHImpl() {
         modified_ = true;
         makeBaseH();
         if (modified_) flags |= ModifiedH;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseVImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseVImpl() {
         modified_ = true;
         makeBaseV();
         if (modified_) flags |= ModifiedV;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeBaseRImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeBaseRImpl() {
         modified_ = true;
         makeBaseR();
         if (modified_) flags |= ModifiedR;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeAImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeAImpl() {
         modified_ = true;
         makeA();
         if (modified_) flags |= ModifiedA;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeWImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeWImpl() {
         modified_ = true;
         makeW();
         if (modified_) flags |= ModifiedW;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeQImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeQImpl() {
         modified_ = true;
         makeQ();
         if (modified_) flags |= ModifiedQ;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeHImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeHImpl() {
         modified_ = true;
         makeH();
         if (modified_) flags |= ModifiedH;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeVImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeVImpl() {
         modified_ = true;
         makeV();
         if (modified_) flags |= ModifiedV;
     }
 
 
-    template<typename T>
-    void Extended<T>::makeRImpl()
-    {
+    template <typename T>
+    void Extended<T>::makeRImpl() {
         modified_ = true;
         makeR();
         if (modified_) flags |= ModifiedR;
