@@ -14,12 +14,6 @@
 There are several ways to contribute to Kalman project:
 * [Submit bugs](https://github.com/Grandbrain/Kalman/issues) and help me verify fixes.
 * Review the [source code changes](https://github.com/Grandbrain/Kalman/pulls).
-* Read and update [documentation](https://github.com/Grandbrain/Kalman/tree/master/Docs) files.
-
-
-## Documentation
-
-*  [Documentation reference](https://github.com/Grandbrain/Kalman/blob/master/Docs/Reference.pdf)
 
 
 ## Usage
